@@ -247,14 +247,14 @@ function render() {
                     {
                         if(asteroids[l].level === 1) {
                             asteroids.push(new Asteroid(asteroids[l].x - 5,
-                                asteroids[l.y - 5], 25, 2, 22));
+                                asteroids[l].y - 5, 25, 2, 22));
                             asteroids.push(new Asteroid(asteroids[l].x + 5,
-                                asteroids[l.y + 5], 25, 2, 22));
+                                asteroids[l].y + 5, 25, 2, 22));
                         } else if (asteroids[l].level === 2) {
                             asteroids.push(new Asteroid(asteroids[l].x - 5,
-                                asteroids[l.y - 5], 15, 3, 12));
+                                asteroids[l].y - 5, 15, 3, 12));
                             asteroids.push(new Asteroid(asteroids[l].x + 5,
-                                asteroids[l.y + 5], 15, 3, 12));
+                                asteroids[l].y + 5, 15, 3, 12));
                         }
                         asteroids.splice(l, 1);
                         missiles.splice(m, 1);
@@ -279,7 +279,7 @@ function render() {
     if(asteroids.length !== 0) {
         for (let j = 0; j < asteroids.length; j++) {
             asteroids[j].update();
-            asteroids[j].draw();
+            asteroids[j].draw(j);
         }
     }
     requestAnimationFrame(render);
