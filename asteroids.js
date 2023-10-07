@@ -6,6 +6,8 @@ let ship;
 let keys = [];
 let missiles = [];
 let asteroids = [];
+let score = 0;
+let lives = 3;
 
 document.addEventListener('DOMContentLoaded', setupCanvas);
 
@@ -128,14 +130,16 @@ class Missile {
 }
 
 class Asteroid {
-    constructor(x, y) {
+    constructor(x, y, radius, level, collisionRadius) {
         this.visible = true;
-        this.x = Math.floor(Math.random() * canvasWidth);
-        this.y = Math.floor(Math.random() * canvasHeight);
-        this.speed = 1;
-        this.radius = 50;
+        this.x = x || Math.floor(Math.random() * canvasWidth);
+        this.y = y || Math.floor(Math.random() * canvasHeight);
+        this.speed = 2;
+        this.radius = radius || 50;
         this.angle = Math.floor(Math.random() * 359);
         this.strokeColor = 'white';
+        this.collisionRadius = collisionRadius || 46;
+        this.level = level || 1
     }
     update() {
         var radians = this.angle * Math.PI / 180;
@@ -172,6 +176,37 @@ class Asteroid {
     }
 }
 
+function circleCollision(p1x, p1y, r1, p2x, p2y, r2) {
+    let radiusSum = r1 + r2;
+    let xDiff = p1x - p2x;
+    let yDiff = p1y - p2y;
+    
+    // Check if the distance between the centers of the circles is less than the sum of their radii
+    if (radiusSum * radiusSum > (xDiff * xDiff) + (yDiff * yDiff)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// displays remaining lives
+function remainingLives() {
+    let startX = 1350;
+    let startY = 10;
+    let points = [[9,9], [-9,9]];
+    ctx.strokeStyle = 'white';
+    for (let i = 0; i < remainingLives; i++){
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        for(let j = 0; j < points.length; j++){
+            ctx.lineTo(startX + points[j][0], startY + points[j][1]);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        startX -= 30;
+    }
+}
+
 function render() {
     ship.movingForward = keys[87];
     if (keys[68]) {
@@ -181,8 +216,60 @@ function render() {
         ship.rotate(-1);
     }
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    ship.update();
-    ship.draw();
+    ctx.fillStyle = 'white';
+    ctx.font = '21px arial';
+    ctx.fillText('SCORE: ' + score.toString(), 20, 35);
+    if(lives <= 0) {
+        ship.visible = false;
+        ctx.fillStyle = 'white';
+        ctx.font = '50px arial';
+        ctx.fillText('GAME OVER', canvasWidth / 2 -150, canvasHeight / 2);
+    }
+    remainingLives();
+
+    if(asteroids.length !== 0) {
+        for(let k = 0; k <asteroids.length; k++){
+            if(circleCollision(ship.x, ship.y, ship.radius, asteroids[k].x, asteroids[k].y, asteroids[k].collisionRadius)) {
+               ship.x = canvasWidth / 2; 
+               ship.y = canvasHeight / 2;
+               ship.velX = 0;
+               ship.velY = 0;
+               lives -= 1;
+            }
+        }
+    }
+
+    if(asteroids.length !== 0 && missiles.length != 0) {
+        loop1:
+            for (let l = 0; l < asteroids.length; l++) {
+                for (let m = 0; m < missiles.length; m++) {
+                    if (circleCollision(missiles[m].x, missiles[m].y, 3, asteroids[l].x, asteroids[l].y, asteroids[l].collisionRadius))
+                    {
+                        if(asteroids[l].level === 1) {
+                            asteroids.push(new Asteroid(asteroids[l].x - 5,
+                                asteroids[l.y - 5], 25, 2, 22));
+                            asteroids.push(new Asteroid(asteroids[l].x + 5,
+                                asteroids[l.y + 5], 25, 2, 22));
+                        } else if (asteroids[l].level === 2) {
+                            asteroids.push(new Asteroid(asteroids[l].x - 5,
+                                asteroids[l.y - 5], 15, 3, 12));
+                            asteroids.push(new Asteroid(asteroids[l].x + 5,
+                                asteroids[l.y + 5], 15, 3, 12));
+                        }
+                        asteroids.splice(l, 1);
+                        missiles.splice(m, 1);
+                        score += 20;
+                        break loop1;
+                    }
+                }
+            }
+    }
+
+    if(ship.visible){
+        ship.update();
+        ship.draw();
+    }
+
     if(missiles.length !== 0) {
         for (let i = 0; i < missiles.length; i++) {
             missiles[i].update();
